@@ -3,7 +3,7 @@ import streamlit as st
 import time
 import re  # Import regular expressions
 
-st.subheader("Emotional Support Chatbot")
+st.subheader("心语助手")
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 # openai.base_url = "https://api.openai.com/v1/assistants"
@@ -165,7 +165,7 @@ if len(st.session_state.messages) < max_messages:
                     else:
                         error_message_html = """
                             <div style='display: inline-block; border:2px solid red; padding: 4px; border-radius: 5px; margin-bottom: 20px; color: red;'>
-                                <strong>Network error:</strong> Please retry。
+                                <strong>网络错误:</strong> 请重试。
                             </div>
                             """
                         full_response = error_message_html
@@ -194,6 +194,6 @@ else:
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             message_placeholder.info(
-                "The maximum dialogue limit for this chatbot has been reached. Please copy the thread_id from the sidebar. Paste the thread_id into the text box below."
+                "此聊天机器人的对话上限已达到。请从侧边栏复制thread_ID。将线thread_ID粘贴到下面的文本框中。"
             )
     st.chat_input(disabled=True)
