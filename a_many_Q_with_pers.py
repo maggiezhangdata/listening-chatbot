@@ -16,6 +16,8 @@ assistant_id = st.secrets["a_many_Q_with_pers"]
 print(assistant_id)
 speed = 200
 
+min_duration = 2
+
 
 
 
@@ -32,6 +34,12 @@ if "first_message_sent" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
     
+if 'duration' not in st.session_state:
+    st.session_state.duration = 0
+    
+if 'first_input_time' not in st.session_state:
+    st.session_state.first_input_time = None
+    
 # Automatically send a "hello" message when the chat begins
 
 
@@ -45,11 +53,18 @@ def local_css(file_name):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 local_css("style.css")
-st.sidebar.markdown("##### 1. 请进行至少4轮对话。 \n"
-                    f"##### 2. Thread_id会在<strong><span style='color: #8B0000;'>  {int((8 - len(st.session_state.messages))/2)}轮 </span></strong>之后出现.\n"
-                    , unsafe_allow_html=True)
+# remaining_time = 1.00 - st.session_state.duration
+
+# if remaining_time > 0:
+#     st.sidebar.markdown("##### 1. 请进行至少4轮对话。 \n"
+#                         f"##### 2. Thread_id会在<strong><span style='color: #8B0000;'>  {remaining_time:.2f}分钟 </span></strong>之后出现.\n"
+#                         , unsafe_allow_html=True)
+# else:
+#     st.sidebar.markdown("请复制下面的thread_id")
 # st.sidebar.info(st.session_state.thread_id)
-st.sidebar.caption("请复制下面的thread_id")
+
+st.sidebar.markdown("##### 请在这里复制thread_id \n")
+
 
 def update_typing_animation(placeholder, current_dots):
     """
@@ -68,13 +83,18 @@ def update_typing_animation(placeholder, current_dots):
 # Handling message input and response
 max_messages = 40  # 10 iterations of conversation (user + assistant)
 
-min_messages = 8
+min_messages = 0
+
 
 if len(st.session_state.messages) < max_messages:
     
-    if len(st.session_state.messages) >= min_messages:
-        st.session_state.show_thread_id = True
-        st.sidebar.info(st.session_state.thread_id)
+    # if first_input_time is not None, check if the user has been inactive for more than 1 minute
+    if st.session_state.first_input_time:
+        if time.time() - st.session_state.first_input_time > min_duration * 60:
+            st.session_state.show_thread_id = True
+            st.sidebar.info(st.session_state.thread_id)
+            
+        
     
     user_input = st.chat_input("")
     if not st.session_state.first_message_sent:
@@ -92,6 +112,17 @@ if len(st.session_state.messages) < max_messages:
             st.markdown(initial_message)
 
     if user_input:
+        if not st.session_state.first_input_time:
+            st.session_state.first_input_time = time.time()
+        st.session_state.duration = (time.time() - st.session_state.first_input_time) / 60
+        remaining_time = min_duration - st.session_state.duration
+        if remaining_time > 0:
+            st.sidebar.markdown(""
+                f"##### Thread_id会在<strong><span style='color: #8B0000;'>  {remaining_time:.2f}分钟 </span></strong>之后出现.\n"
+                , unsafe_allow_html=True)
+        else:
+            st.sidebar.markdown("")
+        st.sidebar.caption("请复制thread_id")
         st.session_state.first_message_sent = True
         st.session_state.messages.append({"role": "user", "content": user_input})
 
