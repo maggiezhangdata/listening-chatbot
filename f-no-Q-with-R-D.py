@@ -12,7 +12,7 @@ openai.default_headers = {"OpenAI-Beta": "assistants=v2"}
 # # client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # client = OpenAI(default_headers={"OpenAI-Beta": "assistants=v2"}, api_key=st.secrets["OPENAI_API_KEY"])
-assistant_id = st.secrets["a_many_Q_with_pers"]
+assistant_id = st.secrets["f_no_Q_with_R_D"]
 print(assistant_id)
 speed = 200
 
