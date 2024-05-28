@@ -12,9 +12,12 @@ openai.default_headers = {"OpenAI-Beta": "assistants=v2"}
 # # client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # client = OpenAI(default_headers={"OpenAI-Beta": "assistants=v2"}, api_key=st.secrets["OPENAI_API_KEY"])
-assistant_id = st.secrets["b_many_Q_wo_pers"]
+assistant_id = st.secrets["a_many_Q_with_pers"]
 print(assistant_id)
 speed = 200
+
+min_duration = 4
+max_duration = 15
 
 
 
@@ -32,7 +35,59 @@ if "first_message_sent" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
     
+if 'duration' not in st.session_state:
+    st.session_state.duration = 0
+    
+if 'first_input_time' not in st.session_state:
+    st.session_state.first_input_time = None
+
+print(f'session duration: {st.session_state.duration}')
+
+if st.session_state.first_input_time:
+    print(f'time till now {(time.time() - st.session_state.first_input_time) / 60}')
+    
 # Automatically send a "hello" message when the chat begins
+
+# This is where we create a placeholder for the countdown timer
+st.sidebar.markdown("#### 如果您不知道和机器人聊些什么，可以参考下列话题：")
+
+
+on = st.sidebar.toggle("显示聊天话题")
+topics = ["探讨某一个专业知识点", 
+          "交流如何提高学习效率", 
+          "探讨近期新闻或社会议题", 
+          "交流自己的财务情况或理财相关", 
+          "交流就业状况或职业生涯规划", 
+          "交流个人生活安排，如旅游、健身、饮食作息等", 
+          "探讨个人兴趣爱好", 
+          "探讨情感话题或寻求恋爱建议", 
+          "交流你期待的理想生活或人生目标",
+          '交流人际关系如朋辈关系、师生关系或与父母的关系等']
+topic_str = "* " + "\n* ".join(topics)
+if on:
+    st.sidebar.write("\n" + topic_str)
+else:
+    st.sidebar.write("")
+
+st.sidebar.markdown("#### 请在这里复制对话编号 \n")
+timer_placeholder = st.sidebar.empty()
+
+def refresh_timer():
+    if st.session_state.first_input_time:
+        st.session_state.duration = (time.time() - st.session_state.first_input_time) / 60
+        remaining_time = min_duration - st.session_state.duration
+        if remaining_time > 0:
+            timer_placeholder.markdown(
+                f"##### 对话编号会在<strong><span style='color: #8B0000;'>  {remaining_time:.2f}分钟 </span></strong>之后出现.\n",
+                unsafe_allow_html=True)
+            
+        else:
+            timer_placeholder.markdown("")
+            st.session_state.show_thread_id = True
+            # st.sidebar.info(st.session_state.thread_id)
+            
+
+
 
 
 for message in st.session_state.messages:
@@ -45,11 +100,10 @@ def local_css(file_name):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 local_css("style.css")
-st.sidebar.markdown("##### 1. 请进行至少4轮对话。 \n"
-                    f"##### 2. Thread_id会在<strong><span style='color: #8B0000;'>  {int((8 - len(st.session_state.messages))/2)}轮 </span></strong>之后出现.\n"
-                    , unsafe_allow_html=True)
-# st.sidebar.info(st.session_state.thread_id)
-st.sidebar.caption("请复制下面的thread_id")
+
+
+
+
 
 def update_typing_animation(placeholder, current_dots):
     """
@@ -68,30 +122,55 @@ def update_typing_animation(placeholder, current_dots):
 # Handling message input and response
 max_messages = 40  # 10 iterations of conversation (user + assistant)
 
-min_messages = 8
+min_messages = 0
 
-if len(st.session_state.messages) < max_messages:
+
+if (not st.session_state.first_input_time) or (st.session_state.first_input_time and time.time() - st.session_state.first_input_time <= max_duration * 60):
     
-    if len(st.session_state.messages) >= min_messages:
-        st.session_state.show_thread_id = True
-        st.sidebar.info(st.session_state.thread_id)
-    
-    user_input = st.chat_input("")
-    if not st.session_state.first_message_sent:
+    # if first_input_time is not None, check if the user has been inactive for more than 1 minute
+    if st.session_state.first_input_time:
+        if time.time() - st.session_state.first_input_time > min_duration * 60:
+            st.session_state.show_thread_id = True
+            # st.sidebar.info(st.session_state.thread_id)
+            
         
-        # insert an image here
-        st.image("https://i.ibb.co/dDWxKws/Can-AI-Really-Understand-Human-Emotions-IMG-3.jpg", width=240)
-        # st.markdown(
-        #     "Start your conversation with the bot.", unsafe_allow_html=True
-        # )
+    # Initialize the timer once outside the main interaction loop
+    refresh_timer()
+    user_input = st.chat_input("")
+    
+    
+
+    # if not st.session_state.first_message_sent:
+    #     welcome_message = "🌟 欢迎来到您的情感陪伴聊天室！我是这里的虚拟助手。无论您是想要分享今天的喜悦，还是需要有人倾听您的心事，我都在这里陪伴您。请随时告诉我您的想法，或者我们可以聊聊您的日常。我们开始吧！🌼"
+    #     # insert an image here
+    #     st.image("https://i.ibb.co/dDWxKws/Can-AI-Really-Understand-Human-Emotions-IMG-3.jpg", width=240)
+    #     st.markdown(
+    #         welcome_message, unsafe_allow_html=True
+    #     )
     if not st.session_state.first_message_sent:
         st.session_state.first_message_sent = True
-        initial_message = "🌟 欢迎来到您的情感陪伴聊天室！我是这里的虚拟助手。无论您是想要分享今天的喜悦，还是需要有人倾听您的心事，我都在这里陪伴您。请随时告诉我您的想法，或者我们可以聊聊您的日常。我们开始吧！🌼"
+        initial_message = "你好，我是机器人小千。你最近过得怎么样？"
+        
+                        
+                        
         st.session_state.messages.append({"role": "assistant", "content": initial_message})
+        time.sleep(1)
         with st.chat_message("assistant"):
-            st.markdown(initial_message)
+            chars = list(initial_message)
+            delay_per_char = 4.0 / speed
+            displayed_message = ""
+            waiting_message = st.empty()  # Create a new placeholder for the waiting message
+            message_placeholder = st.empty()    
+            for char in chars:
+                displayed_message += char
+                message_placeholder.markdown(displayed_message)
+                time.sleep(delay_per_char)  # Wait for calculated delay time
 
     if user_input:
+        if not st.session_state.first_input_time:
+            st.session_state.first_input_time = time.time()
+        
+        # st.sidebar.caption("请复制thread_id")
         st.session_state.first_message_sent = True
         st.session_state.messages.append({"role": "user", "content": user_input})
 
@@ -183,17 +262,27 @@ if len(st.session_state.messages) < max_messages:
             )
 
 else:
-    st.sidebar.info(st.session_state.thread_id)
+    # st.sidebar.info(st.session_state.thread_id)
+    if user_input := st.chat_input("", disabled=True):
+        st.chat_message("assistant").info("此聊天机器人的对话上限已达到。请从侧边栏复制对话编号。将对话编号粘贴到下面的文本框中。")
 
-    if user_input:= st.chat_input(""):
-        with st.chat_message("user"):
-            st.markdown(user_input)
+    # if user_input:= st.chat_input(""):
+    #     with st.chat_message("user"):
+    #         st.markdown(user_input)
         
 
     
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            message_placeholder.info(
-                "此聊天机器人的对话上限已达到。请从侧边栏复制thread_ID。将线thread_ID粘贴到下面的文本框中。"
-            )
-    st.chat_input(disabled=True)
+    #     with st.chat_message("assistant"):
+    #         message_placeholder = st.empty()
+    #         message_placeholder.info(
+    #             "此聊天机器人的对话上限已达到。请从侧边栏复制thread_ID。将thread_ID粘贴到下面的文本框中。"
+    #         )
+    # st.chat_input(disabled=True)
+
+
+while True:
+    if st.session_state.show_thread_id:
+        st.sidebar.info(st.session_state.thread_id)
+        break
+    refresh_timer()
+    time.sleep(0.6)  # Adjust this value as necessary for your use case
