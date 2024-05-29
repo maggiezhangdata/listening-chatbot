@@ -76,9 +76,14 @@ def refresh_timer():
     if st.session_state.first_input_time:
         st.session_state.duration = (time.time() - st.session_state.first_input_time) / 60
         remaining_time = min_duration - st.session_state.duration
+        def format_time(minutes):
+            # convert minutes (is a float) to xx min xx sec
+            minutes_new = int(minutes)
+            seconds = int((minutes - int(minutes)) * 60)
+            return f"{minutes_new} 分钟 {seconds} 秒"
         if remaining_time > 0:
             timer_placeholder.markdown(
-                f"##### 对话编号会在<strong><span style='color: #8B0000;'>  {remaining_time:.2f}分钟 </span></strong>之后出现.\n",
+                f"##### 对话编号会在<strong><span style='color: #8B0000;'>  {format_time(remaining_time)} </span></strong>之后出现.\n",
                 unsafe_allow_html=True)
             
         else:
