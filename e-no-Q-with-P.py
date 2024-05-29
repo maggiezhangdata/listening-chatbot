@@ -84,7 +84,7 @@ def refresh_timer():
             return f"{minutes_new} 分钟 {seconds} 秒"
         if remaining_time > 0:
             timer_placeholder.markdown(
-                f"##### 对话编号会在<strong><span style='color: #8B0000;'>  {min_duration}分钟 </span></strong>之后出现.\n",
+                f"##### 对话编号会在<strong><span style='color: #8B0000;'>  {min_duration}分钟 </span></strong>之后出现。\n",
                 unsafe_allow_html=True)
             
         else:
